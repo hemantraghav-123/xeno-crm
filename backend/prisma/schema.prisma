@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String
+
+  createdAt   DateTime @default(now())
+
+  orders       Order[]
+  communications Communication[]
+}
+
+model Order {
+  id          String   @id @default(cuid())
+
+  amount      Float
+
+  createdAt   DateTime @default(now())
+
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+
+  name        String
+  channel     String
+
+  message     String
+
+  audienceSize Int @default(0)
+
+  createdAt   DateTime @default(now())
+
+  communications Communication[]
+}
+model Communication {
+  id String @id @default(cuid())
+
+  customerId String
+  campaignId String
+
+  status String @default("PENDING")
+
+  channel String
+
+  message String
+
+  deliveredAt DateTime?
+  openedAt DateTime?
+  clickedAt DateTime?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Segment {
+  id          String   @id @default(cuid())
+
+  name        String
+
+  description String
+
+  rules       Json
+
+  createdAt   DateTime @default(now())
+}
