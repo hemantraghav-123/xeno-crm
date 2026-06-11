@@ -2,6 +2,68 @@ import { Request, Response } from "express";
 import { prisma } from "../prisma/prisma";
 import { sendToChannel } from "../services/channelClient";
 
+export const getAllCampaigns = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      include: {
+        communications: {
+          select: {
+            status: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const mappedCampaigns = campaigns.map((campaign) => {
+      const communications = campaign.communications;
+      const sent = communications.length;
+      
+      const delivered = communications.filter((c) =>
+        ["DELIVERED", "OPENED", "CLICKED"].includes(c.status)
+      ).length;
+      
+      const opened = communications.filter((c) =>
+        ["OPENED", "CLICKED"].includes(c.status)
+      ).length;
+      
+      const clicked = communications.filter((c) =>
+        c.status === "CLICKED"
+      ).length;
+
+      const deliveryRate = sent ? (delivered / sent) * 100 : 0;
+      const openRate = delivered ? (opened / delivered) * 100 : 0;
+      const clickRate = opened ? (clicked / opened) * 100 : 0;
+
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        channel: campaign.channel,
+        message: campaign.message,
+        audienceSize: campaign.audienceSize,
+        createdAt: campaign.createdAt,
+        status: sent > 0 ? "SENT" : "PENDING",
+        sent,
+        deliveryRate,
+        openRate,
+        clickRate,
+      };
+    });
+
+    res.json(mappedCampaigns);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Failed to fetch campaigns",
+    });
+  }
+};
+
 export const createCampaign = async (
   req: Request,
   res: Response

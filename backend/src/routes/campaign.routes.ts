@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAllCampaigns,
   createCampaign,
   sendCampaign,
   getCampaignAnalytics,
@@ -7,6 +8,7 @@ import {
 
 const router = Router();
 
+router.get("/", getAllCampaigns);
 router.post("/", createCampaign);
 
 router.post("/:id/send", sendCampaign);

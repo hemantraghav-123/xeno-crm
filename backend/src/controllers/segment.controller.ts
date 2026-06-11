@@ -62,6 +62,7 @@ export const executeAISegment = async (
       prompt,
       rules,
       totalAudience: audience.length,
+      audienceSize: audience.length,
       audience: audience.slice(0, 20),
     });
   } catch (error) {

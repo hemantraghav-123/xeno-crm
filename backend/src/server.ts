@@ -10,6 +10,9 @@ import segmentRoutes from "./routes/segment.routes";
 import communicationRoutes from "./routes/communication.routes";
 import aiCampaignRoutes from "./routes/aiCampaign.routes";
 import { createAICampaign } from "./controllers/aiCampaign.controller";
+import dashboardRoutes from "./routes/dashboard.routes";
+import analyticsRoutes from "./routes/analytics.routes";
+
 
 
 const app = express();
@@ -30,6 +33,8 @@ app.use(
   "/api/ai-campaign",
   aiCampaignRoutes
 );
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.post("/api/ai-campaign/create", createAICampaign);
 app.get("/", (_, res) => {
   res.send("Xeno CRM Backend Running");
