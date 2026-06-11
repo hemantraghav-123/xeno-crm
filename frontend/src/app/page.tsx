@@ -1,5 +1,5 @@
 import DashboardCard from "@/components/DashboardCard";
-import axios from "axios";
+import { api } from "@/services/api";
 import { Users, ClipboardList, Send, BarChart2, Mail, MousePointer } from "lucide-react";
 
 // Force Next.js to fetch fresh stats on every request instead of caching the page
@@ -16,7 +16,7 @@ interface DashboardStats {
 
 async function getStats(): Promise<DashboardStats> {
   try {
-    const response = await axios.get("http://localhost:5000/api/dashboard/stats");
+    const response = await api.get("/dashboard/stats");
     return response.data;
   } catch (error) {
     console.error("Failed to fetch dashboard stats:", error);

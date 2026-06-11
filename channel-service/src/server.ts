@@ -11,13 +11,15 @@ app.get("/", (req, res) => {
   res.json({ status: "running", service: "Channel Service" });
 });
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+
 async function sendCallback(
   communicationId: string,
   status: "DELIVERED" | "OPENED" | "CLICKED" | "FAILED"
 ) {
   try {
     await axios.post(
-      "http://localhost:5000/api/communications/callback",
+      `${BACKEND_URL}/api/communications/callback`,
       {
         communicationId,
         status,
@@ -68,6 +70,7 @@ app.post("/send", async (req, res) => {
   });
 });
 
-app.listen(6001, () => {
-  console.log("Channel Service running on 6001");
+const PORT = process.env.PORT || 6001;
+app.listen(PORT, () => {
+  console.log(`Channel Service running on ${PORT}`);
 });
