@@ -24,54 +24,58 @@ export const generateCustomers = async (
     const { faker } = await import("@faker-js/faker");
     const count = Number(req.body.count || 100);
 
-    const customersData = [];
-    for (let i = 0; i < count; i++) {
-      customersData.push({
-        name: faker.person.fullName(),
-        email: faker.internet.email().toLowerCase(),
-        phone: faker.helpers.fromRegExp("+91 [7-9][0-9]{9}"),
-      });
-    }
+    const BATCH_SIZE = 50;
+    let customersCreated = 0;
+    let ordersCreated = 0;
 
-    // Insert customers in bulk
-    await prisma.customer.createMany({
-      data: customersData,
-      skipDuplicates: true,
-    });
+    for (let i = 0; i < count; i += BATCH_SIZE) {
+      const currentBatchSize = Math.min(BATCH_SIZE, count - i);
+      const batchCustomersData = [];
 
-    // Query all customers that currently have no orders and generate order records for them
-    const allCustomers = await prisma.customer.findMany({
-      include: {
-        orders: true,
-      },
-    });
-
-    const customersWithoutOrders = allCustomers.filter(
-      (c) => c.orders.length === 0
-    );
-
-    const ordersData = [];
-    for (const customer of customersWithoutOrders) {
-      const orderCount = faker.number.int({ min: 1, max: 8 });
-      for (let j = 0; j < orderCount; j++) {
-        ordersData.push({
-          amount: faker.number.float({ min: 200, max: 15000, multipleOf: 0.01 }),
-          customerId: customer.id,
+      for (let j = 0; j < currentBatchSize; j++) {
+        batchCustomersData.push({
+          name: faker.person.fullName(),
+          email: faker.internet.email().toLowerCase(),
+          phone: faker.helpers.fromRegExp("+91 [7-9][0-9]{9}"),
           createdAt: faker.date.past({ years: 1 }),
         });
       }
-    }
 
-    if (ordersData.length > 0) {
-      await prisma.order.createMany({
-        data: ordersData,
-      });
+      // Create customers individually within the batch to retrieve their generated IDs
+      const createdCustomers = await Promise.all(
+        batchCustomersData.map((data) =>
+          prisma.customer.create({
+            data,
+          })
+        )
+      );
+
+      customersCreated += createdCustomers.length;
+
+      const batchOrdersData = [];
+      for (const customer of createdCustomers) {
+        const orderCount = faker.number.int({ min: 1, max: 8 });
+        for (let o = 0; o < orderCount; o++) {
+          batchOrdersData.push({
+            amount: faker.number.float({ min: 200, max: 15000, multipleOf: 0.01 }),
+            customerId: customer.id,
+            createdAt: faker.date.past({ years: 1 }),
+          });
+        }
+      }
+
+      if (batchOrdersData.length > 0) {
+        await prisma.order.createMany({
+          data: batchOrdersData,
+        });
+        ordersCreated += batchOrdersData.length;
+      }
     }
 
     res.json({
       success: true,
-      generated: count,
-      ordersGenerated: ordersData.length,
+      generated: customersCreated,
+      ordersGenerated: ordersCreated,
     });
   } catch (error) {
     console.error("Generate customers error:", error);
