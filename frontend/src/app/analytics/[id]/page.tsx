@@ -6,6 +6,7 @@ import { api } from "@/services/api";
 import FunnelChart from "@/components/FunnelChart";
 import InsightCard from "@/components/InsightCard";
 import { ArrowLeft, Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, AlertTriangle } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface AnalyticsResponse {
   analytics: {
@@ -81,7 +82,8 @@ export default function CampaignAnalyticsPage({
   // Loading skeletons
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6 space-y-10">
+      <ProtectedRoute>
+        <div className="max-w-6xl mx-auto p-6 space-y-10">
         {/* Back Link Skeleton */}
         <div className="w-28 h-5 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse"></div>
 
@@ -112,14 +114,16 @@ export default function CampaignAnalyticsPage({
           <div className="lg:col-span-2 h-[400px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 animate-pulse"></div>
           <div className="h-[400px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 animate-pulse"></div>
         </div>
-      </div>
+        </div>
+      </ProtectedRoute>
     );
   }
 
   // Error state layout
   if (error || !data) {
     return (
-      <div className="max-w-md mx-auto my-20 p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm space-y-6 text-center">
+      <ProtectedRoute>
+        <div className="max-w-md mx-auto my-20 p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm space-y-6 text-center">
         <div className="inline-flex p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl">
           <AlertTriangle className="h-8 w-8" />
         </div>
@@ -145,14 +149,16 @@ export default function CampaignAnalyticsPage({
             Retry
           </button>
         </div>
-      </div>
+        </div>
+      </ProtectedRoute>
     );
   }
 
   const { analytics, kpis, insight } = data;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <ProtectedRoute>
+      <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Back to Analytics Link */}
       <Link
         href="/analytics"
@@ -266,6 +272,7 @@ export default function CampaignAnalyticsPage({
           />
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
 import { Copy, Check, Send, Sparkles, PlusCircle } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface Campaign {
   id: string;
@@ -119,7 +120,8 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-10">
+    <ProtectedRoute>
+      <div className="max-w-6xl mx-auto p-6 space-y-10">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -314,6 +316,7 @@ export default function CampaignsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

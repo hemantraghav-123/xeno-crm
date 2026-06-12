@@ -1,0 +1,3 @@
+Frontend URL:- https://xeno-crm-pied.vercel.app
+Backend URL:- https://xeno-crm-backend-35eq.onrender.com
+Channel Service URL:- https://xeno-crm-channel-service.onrender.com

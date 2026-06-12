@@ -1,9 +1,10 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
 import DashboardCard from "@/components/DashboardCard";
 import { api } from "@/services/api";
 import { Users, ClipboardList, Send, BarChart2, Mail, MousePointer } from "lucide-react";
-
-// Force Next.js to fetch fresh stats on every request instead of caching the page
-export const dynamic = "force-dynamic";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface DashboardStats {
   customers: number;
@@ -14,25 +15,31 @@ interface DashboardStats {
   clickRate: number;
 }
 
-async function getStats(): Promise<DashboardStats> {
-  try {
-    const response = await api.get("/dashboard/stats");
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch dashboard stats:", error);
-    return {
-      customers: 0,
-      orders: 0,
-      campaigns: 0,
-      messages: 0,
-      openRate: 0,
-      clickRate: 0,
-    };
-  }
-}
+export default function Home() {
+  const [stats, setStats] = useState<DashboardStats>({
+    customers: 0,
+    orders: 0,
+    campaigns: 0,
+    messages: 0,
+    openRate: 0,
+    clickRate: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-export default async function Home() {
-  const stats = await getStats();
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        setLoading(true);
+        const response = await api.get("/dashboard/stats");
+        setStats(response.data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
 
   const cardsData = [
     {
@@ -80,46 +87,60 @@ export default async function Home() {
   ];
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight mb-2">
-          Xeno AI CRM Dashboard
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-          Welcome back. Track customer growth, campaign metrics, and engagement insights.
-        </p>
-      </div>
+    <ProtectedRoute>
+      <main className="max-w-6xl mx-auto p-6 space-y-8">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight mb-2">
+            Xeno AI CRM Dashboard
+          </h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+            Welcome back. Track customer growth, campaign metrics, and engagement insights.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cardsData.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={index}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col justify-between"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-zinc-500 dark:text-zinc-400 text-sm font-semibold tracking-wide uppercase">
-                    {card.title}
-                  </h2>
-                  <p className="mt-2 text-3xl font-extrabold tracking-tight">
-                    {card.value}
-                  </p>
-                </div>
-                <div className={`p-2.5 rounded-lg ${card.iconColor}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-32 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="h-6 bg-zinc-100 dark:bg-zinc-800 rounded w-1/3"></div>
+                <div className="h-8 bg-zinc-100 dark:bg-zinc-800 rounded w-1/2 mt-2"></div>
               </div>
-              <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="text-xs text-zinc-400 font-medium">
-                  {card.description}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </main>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cardsData.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={index}
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col justify-between"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-zinc-500 dark:text-zinc-400 text-sm font-semibold tracking-wide uppercase">
+                        {card.title}
+                      </h2>
+                      <p className="mt-2 text-3xl font-extrabold tracking-tight">
+                        {card.value}
+                      </p>
+                    </div>
+                    <div className={`p-2.5 rounded-lg ${card.iconColor}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                    <span className="text-xs text-zinc-400 font-medium">
+                      {card.description}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </ProtectedRoute>
   );
 }
+

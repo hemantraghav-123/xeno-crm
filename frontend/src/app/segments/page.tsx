@@ -1,9 +1,15 @@
+"use client";
+
 import SegmentBuilder from "@/components/SegmentBuilder";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function SegmentsPage() {
   return (
-    <div className="p-6">
-      <SegmentBuilder />
-    </div>
+    <ProtectedRoute>
+      <div className="p-6">
+        <SegmentBuilder />
+      </div>
+    </ProtectedRoute>
   );
 }
+

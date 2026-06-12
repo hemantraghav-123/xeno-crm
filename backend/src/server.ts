@@ -12,6 +12,8 @@ import aiCampaignRoutes from "./routes/aiCampaign.routes";
 import { createAICampaign } from "./controllers/aiCampaign.controller";
 import dashboardRoutes from "./routes/dashboard.routes";
 import analyticsRoutes from "./routes/analytics.routes";
+import authRoutes from "./routes/auth.routes";
+import { requireAuth } from "./middleware/auth.middleware";
 
 
 
@@ -28,22 +30,25 @@ app.use(
 );
 app.use(express.json());
 
-app.use("/api/customers", customerRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/campaigns", campaignRoutes);
-app.use("/api/seed", seedRoutes);
-app.use("/api/segments", segmentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/customers", requireAuth, customerRoutes);
+app.use("/api/orders", requireAuth, orderRoutes);
+app.use("/api/campaigns", requireAuth, campaignRoutes);
+app.use("/api/seed", requireAuth, seedRoutes);
+app.use("/api/segments", requireAuth, segmentRoutes);
 app.use(
   "/api/communications",
+  requireAuth,
   communicationRoutes
 );
 app.use(
   "/api/ai-campaign",
+  requireAuth,
   aiCampaignRoutes
 );
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/analytics", analyticsRoutes);
-app.post("/api/ai-campaign/create", createAICampaign);
+app.use("/api/dashboard", requireAuth, dashboardRoutes);
+app.use("/api/analytics", requireAuth, analyticsRoutes);
+app.post("/api/ai-campaign/create", requireAuth, createAICampaign);
 app.get("/", (_, res) => {
   res.send("Xeno CRM Backend Running");
 });

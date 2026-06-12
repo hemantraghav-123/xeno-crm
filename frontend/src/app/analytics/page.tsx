@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/services/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, BarChart2, ArrowRight } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface AnalyticsData {
   sent: number;
@@ -88,7 +89,8 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-10">
+    <ProtectedRoute>
+      <div className="max-w-6xl mx-auto p-6 space-y-10">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Campaign Analytics</h1>
@@ -307,6 +309,7 @@ export default function AnalyticsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
