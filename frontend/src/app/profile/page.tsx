@@ -1,17 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { User, Mail, Calendar, Trash2, ShieldAlert, X, Sparkles } from "lucide-react";
-import { api } from "@/services/api";
+import { User, Mail, Calendar, Sparkles } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [emailConfirmation, setEmailConfirmation] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const joinDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -20,22 +15,6 @@ export default function ProfilePage() {
         day: "numeric",
       })
     : "Recently Joined";
-
-  const handleDeleteAccount = async () => {
-    if (emailConfirmation !== user?.email) return;
-
-    try {
-      setIsDeleting(true);
-      setError(null);
-      await api.delete("/auth/delete-account");
-      // Clear session & redirect
-      logout();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Failed to delete account. Please try again.");
-      setIsDeleting(false);
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -104,114 +83,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-
-        {/* Danger Zone */}
-        <div className="bg-rose-50/40 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/30 rounded-2xl p-8 space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="p-2.5 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-450 rounded-xl">
-              <ShieldAlert className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-bold text-rose-800 dark:text-rose-400">Danger Zone</h3>
-              <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
-                Once you delete your account, there is no going back. All of your user details, campaign access, and settings will be permanently erased.
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              onClick={() => {
-                setError(null);
-                setEmailConfirmation("");
-                setIsDeleteModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-rose-655 hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-500/10 rounded-xl transition-all cursor-pointer"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete Account
-            </button>
-          </div>
-        </div>
-
-        {/* Custom Confirmation Modal */}
-        {isDeleteModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-              onClick={() => {
-                if (!isDeleting) setIsDeleteModalOpen(false);
-              }}
-            />
-
-            {/* Modal Dialog */}
-            <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-md p-6 shadow-2xl mx-4 z-10 animate-in zoom-in-95 duration-200">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={isDeleting}
-                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div className="flex items-center gap-3.5 mb-4">
-                <div className="p-2 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-450 rounded-xl">
-                  <ShieldAlert className="h-5 w-5" />
-                </div>
-                <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Delete Account?</h4>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-zinc-550 dark:text-zinc-400 leading-relaxed">
-                  This action is <span className="font-bold text-zinc-800 dark:text-zinc-200">permanent</span> and cannot be undone. To proceed, please confirm by typing your email address <span className="font-mono text-xs select-all bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-800 dark:text-zinc-200">{user?.email}</span> below.
-                </p>
-
-                <div>
-                  <input
-                    type="text"
-                    value={emailConfirmation}
-                    onChange={(e) => setEmailConfirmation(e.target.value)}
-                    placeholder="Enter your email"
-                    disabled={isDeleting}
-                    className="w-full px-3.5 py-2.5 text-sm bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-rose-500 transition-all text-zinc-800 dark:text-zinc-50"
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 rounded-lg text-xs font-medium border border-rose-100 dark:border-rose-950/40">
-                    {error}
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setIsDeleteModalOpen(false)}
-                    disabled={isDeleting}
-                    className="flex-1 px-4 py-2.5 text-sm font-semibold border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting || emailConfirmation !== user?.email}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-rose-600/15 cursor-pointer"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Deleting...
-                      </>
-                    ) : (
-                      "Confirm Delete"
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </ProtectedRoute>
   );
