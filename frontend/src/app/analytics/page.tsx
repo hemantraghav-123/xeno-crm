@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/services/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, BarChart2, ArrowRight } from "lucide-react";
+import { Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, BarChart2, ArrowRight, Layers, Users } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 interface AnalyticsData {
@@ -27,6 +27,12 @@ interface Campaign {
   clickRate: number;
 }
 
+interface CohortData {
+  cohort: string;
+  total: number;
+  retention: number[];
+}
+
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<AnalyticsData>({
     sent: 0,
@@ -35,8 +41,10 @@ export default function AnalyticsPage() {
     clicked: 0,
   });
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [cohorts, setCohorts] = useState<CohortData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+  const [loadingCohorts, setLoadingCohorts] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [pollingActive, setPollingActive] = useState(true);
 
@@ -44,6 +52,7 @@ export default function AnalyticsPage() {
     setIsMounted(true);
     fetchAnalytics();
     fetchCampaigns();
+    fetchCohorts();
   }, []);
 
   useEffect(() => {
@@ -52,6 +61,7 @@ export default function AnalyticsPage() {
     const interval = setInterval(() => {
       fetchAnalytics(false); // fetch silently without loading indicator
       fetchCampaigns(false); // fetch silently
+      fetchCohorts(false); // fetch silently
     }, 5000);
 
     return () => clearInterval(interval);
@@ -78,6 +88,18 @@ export default function AnalyticsPage() {
       console.error("Failed to fetch campaigns", error);
     } finally {
       if (showLoading) setLoadingCampaigns(false);
+    }
+  };
+
+  const fetchCohorts = async (showLoading = true) => {
+    try {
+      if (showLoading) setLoadingCohorts(true);
+      const response = await api.get("/dashboard/cohorts");
+      setCohorts(response.data);
+    } catch (error) {
+      console.error("Failed to fetch cohorts", error);
+    } finally {
+      if (showLoading) setLoadingCohorts(false);
     }
   };
 
@@ -302,6 +324,103 @@ export default function AnalyticsPage() {
                         <ArrowRight className="h-3 w-3" />
                       </Link>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Cohort Retention Heatmap Section */}
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Layers className="h-5 w-5 text-indigo-500" />
+              Cohort Retention Analysis
+            </h2>
+            <p className="text-xs text-zinc-400 mt-1">
+              Month-over-month customer cohort purchasing behavior and return rates.
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-indigo-600 rounded"></span>
+              <span className="text-zinc-500 font-medium">High (&ge;50%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-indigo-600/40 rounded"></span>
+              <span className="text-zinc-500 font-medium">Medium (20-49%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 bg-indigo-600/10 rounded"></span>
+              <span className="text-zinc-500 font-medium">Low (1-19%)</span>
+            </div>
+          </div>
+        </div>
+
+        {loadingCohorts && cohorts.length === 0 ? (
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-zinc-100 dark:bg-zinc-800/40 rounded-lg"></div>
+            ))}
+          </div>
+        ) : cohorts.length === 0 ? (
+          <div className="text-center py-10 text-zinc-400 border border-dashed rounded-lg text-xs">
+            No customer cohorts found. Start registering users and orders to calculate retention.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-zinc-100 dark:border-zinc-800/50">
+            <table className="w-full border-collapse text-center text-xs">
+              <thead>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 text-zinc-400 font-bold bg-zinc-50 dark:bg-zinc-900/40 uppercase">
+                  <th className="py-3 px-4 text-left font-semibold">Cohort Month</th>
+                  <th className="py-3 px-4 text-left font-semibold">Cohort Size</th>
+                  <th className="py-3 px-2 font-semibold">Month 0</th>
+                  <th className="py-3 px-2 font-semibold">Month 1</th>
+                  <th className="py-3 px-2 font-semibold">Month 2</th>
+                  <th className="py-3 px-2 font-semibold">Month 3</th>
+                  <th className="py-3 px-2 font-semibold">Month 4</th>
+                  <th className="py-3 px-2 font-semibold">Month 5</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium text-zinc-800 dark:text-zinc-200">
+                {cohorts.map((cohort, idx) => (
+                  <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                    <td className="py-3 px-4 text-left font-bold text-zinc-900 dark:text-zinc-100">{cohort.cohort}</td>
+                    <td className="py-3 px-4 text-left text-zinc-400 flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-zinc-300" />
+                      {cohort.total} users
+                    </td>
+                    {[...Array(6)].map((_, monthIdx) => {
+                      const val = cohort.retention[monthIdx];
+                      let cellClass = "";
+                      
+                      if (val === undefined) {
+                        cellClass = "bg-zinc-50 dark:bg-zinc-900/20 text-zinc-300 dark:text-zinc-700/60";
+                      } else if (val >= 100) {
+                        cellClass = "bg-indigo-600 text-white font-bold";
+                      } else if (val >= 50) {
+                        cellClass = "bg-indigo-600/80 text-white dark:text-indigo-950 font-bold";
+                      } else if (val >= 35) {
+                        cellClass = "bg-indigo-600/60 text-white dark:text-indigo-950 font-bold";
+                      } else if (val >= 20) {
+                        cellClass = "bg-indigo-600/40 text-zinc-900 dark:text-zinc-50 font-semibold";
+                      } else if (val >= 10) {
+                        cellClass = "bg-indigo-600/20 text-indigo-950 dark:text-indigo-200";
+                      } else if (val > 0) {
+                        cellClass = "bg-indigo-600/10 text-indigo-800 dark:text-indigo-300";
+                      } else {
+                        cellClass = "bg-zinc-100/50 text-zinc-400 dark:bg-zinc-800/40 dark:text-zinc-500";
+                      }
+
+                      return (
+                        <td key={monthIdx} className={`py-3 px-2 transition-all ${cellClass}`}>
+                          {val !== undefined ? `${val}%` : "-"}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>

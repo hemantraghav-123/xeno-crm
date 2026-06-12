@@ -3,12 +3,33 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Search, ChevronLeft, ChevronRight, X, Calendar, Clipboard, CreditCard, User, ShieldAlert } from "lucide-react";
+import { 
+  Search, ChevronLeft, ChevronRight, X, Calendar, Clipboard, CreditCard, 
+  User, ShieldAlert, MailOpen, Send, Mail, MousePointer, ShoppingBag, History 
+} from "lucide-react";
 
 interface Order {
   id: string;
   amount: number;
   createdAt: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  channel: string;
+  message: string;
+}
+
+interface Communication {
+  id: string;
+  status: string;
+  channel: string;
+  createdAt: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  clickedAt?: string;
+  campaign: Campaign;
 }
 
 interface Customer {
@@ -19,6 +40,7 @@ interface Customer {
   createdAt: string;
   totalSpend: number;
   orders: Order[];
+  communications?: Communication[];
 }
 
 export default function CustomersPage() {
@@ -29,6 +51,13 @@ export default function CustomersPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [activeTab, setActiveTab] = useState<"timeline" | "orders">("timeline");
+
+  useEffect(() => {
+    if (!selectedCustomer) {
+      setActiveTab("timeline");
+    }
+  }, [selectedCustomer]);
 
   // Debounced search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -361,6 +390,244 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
+                {/* Tabs selection: Timeline vs Orders */}
+                <div className="space-y-4">
+                  <div className="flex border-b border-zinc-100 dark:border-zinc-800 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("timeline")}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                        activeTab === "timeline"
+                          ? "border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
+                          : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                      Journey Timeline
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("orders")}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                        activeTab === "orders"
+                          ? "border-zinc-900 text-zinc-900 dark:border-zinc-50 dark:text-zinc-50"
+                          : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                      }`}
+                    >
+                      <Clipboard className="h-3.5 w-3.5" />
+                      Order History ({selectedCustomer.orders?.length || 0})
+                    </button>
+                  </div>
+
+                  {activeTab === "timeline" ? (() => {
+                    interface TimelineEvent {
+                      id: string;
+                      type: 'REGISTRATION' | 'ORDER' | 'CAMPAIGN_DISPATCH' | 'CAMPAIGN_DELIVERY' | 'CAMPAIGN_OPEN' | 'CAMPAIGN_CLICK';
+                      date: Date;
+                      title: string;
+                      description: string;
+                      amount?: number;
+                      channel?: string;
+                    }
+
+                    const timelineEvents: TimelineEvent[] = [];
+
+                    // 1. Account Registration
+                    timelineEvents.push({
+                      id: 'reg-' + selectedCustomer.id,
+                      type: 'REGISTRATION',
+                      date: new Date(selectedCustomer.createdAt),
+                      title: "Account Created",
+                      description: "Customer profile successfully registered in the database.",
+                    });
+
+                    // 2. Orders
+                    selectedCustomer.orders?.forEach((order) => {
+                      timelineEvents.push({
+                        id: 'order-' + order.id,
+                        type: 'ORDER',
+                        date: new Date(order.createdAt),
+                        title: "Order Placed",
+                        description: `Placed order ${order.id.slice(-6).toUpperCase()} of amount ${formatCurrency(order.amount)}.`,
+                        amount: order.amount,
+                      });
+                    });
+
+                    // 3. Communications / Campaigns
+                    selectedCustomer.communications?.forEach((comm) => {
+                      const campaignName = comm.campaign?.name || "Marketing Campaign";
+                      
+                      // Dispatch
+                      timelineEvents.push({
+                        id: `comm-disp-${comm.id}`,
+                        type: 'CAMPAIGN_DISPATCH',
+                        date: new Date(comm.createdAt),
+                        title: `Campaign Sent: ${campaignName}`,
+                        description: `Campaign sent via ${comm.channel.toUpperCase()}.`,
+                        channel: comm.channel,
+                      });
+
+                      // Delivery
+                      if (comm.deliveredAt || ["DELIVERED", "OPENED", "CLICKED"].includes(comm.status)) {
+                        const date = comm.deliveredAt ? new Date(comm.deliveredAt) : new Date(new Date(comm.createdAt).getTime() + 5000);
+                        timelineEvents.push({
+                          id: `comm-deliv-${comm.id}`,
+                          type: 'CAMPAIGN_DELIVERY',
+                          date,
+                          title: "Campaign Delivered",
+                          description: `Successfully delivered to recipient's ${comm.channel.toUpperCase()} inbox.`,
+                          channel: comm.channel,
+                        });
+                      }
+
+                      // Opened
+                      if (comm.openedAt || ["OPENED", "CLICKED"].includes(comm.status)) {
+                        const date = comm.openedAt ? new Date(comm.openedAt) : new Date(new Date(comm.createdAt).getTime() + 15000);
+                        timelineEvents.push({
+                          id: `comm-open-${comm.id}`,
+                          type: 'CAMPAIGN_OPEN',
+                          date,
+                          title: "Campaign Opened",
+                          description: `Customer opened the campaign message.`,
+                          channel: comm.channel,
+                        });
+                      }
+
+                      // Clicked
+                      if (comm.clickedAt || comm.status === "CLICKED") {
+                        const date = comm.clickedAt ? new Date(comm.clickedAt) : new Date(new Date(comm.createdAt).getTime() + 30000);
+                        timelineEvents.push({
+                          id: `comm-click-${comm.id}`,
+                          type: 'CAMPAIGN_CLICK',
+                          date,
+                          title: "Campaign Clicked",
+                          description: "Customer clicked the campaign link / call-to-action.",
+                          channel: comm.channel,
+                        });
+                      }
+                    });
+
+                    // Sort events newest first
+                    timelineEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+                    return timelineEvents.length > 0 ? (
+                      <div className="relative border-l border-zinc-200 dark:border-zinc-800 ml-4 pl-6 space-y-6 max-h-[300px] overflow-y-auto pr-2">
+                        {timelineEvents.map((event) => {
+                          let iconBg = "";
+                          let iconText = "";
+                          let IconComp = User;
+                          
+                          switch (event.type) {
+                            case 'REGISTRATION':
+                              iconBg = "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/30";
+                              iconText = "text-indigo-600 dark:text-indigo-400";
+                              IconComp = User;
+                              break;
+                            case 'ORDER':
+                              iconBg = "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/30";
+                              iconText = "text-emerald-600 dark:text-emerald-400";
+                              IconComp = ShoppingBag;
+                              break;
+                            case 'CAMPAIGN_DISPATCH':
+                              iconBg = "bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/30";
+                              iconText = "text-violet-600 dark:text-violet-400";
+                              IconComp = Send;
+                              break;
+                            case 'CAMPAIGN_DELIVERY':
+                              iconBg = "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/30";
+                              iconText = "text-blue-600 dark:text-blue-400";
+                              IconComp = Mail;
+                              break;
+                            case 'CAMPAIGN_OPEN':
+                              iconBg = "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/30";
+                              iconText = "text-amber-600 dark:text-amber-400";
+                              IconComp = MailOpen;
+                              break;
+                            case 'CAMPAIGN_CLICK':
+                              iconBg = "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/30";
+                              iconText = "text-rose-600 dark:text-rose-400";
+                              IconComp = MousePointer;
+                              break;
+                          }
+
+                          return (
+                            <div key={event.id} className="relative group">
+                              {/* Timeline dot */}
+                              <div className={`absolute -left-[37px] top-0.5 flex items-center justify-center w-[22px] h-[22px] rounded-full border bg-white dark:bg-zinc-950 ${iconBg} ${iconText}`}>
+                                <IconComp className="h-3 w-3" />
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="space-y-1">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                    {event.title}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-zinc-400">
+                                    {event.date.toLocaleDateString(undefined, {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                  {event.description}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-zinc-400 border border-dashed rounded-xl border-zinc-200 dark:border-zinc-800 text-xs">
+                        No touchpoints logged for this customer.
+                      </div>
+                    );
+                  })() : (
+                    selectedCustomer.orders && selectedCustomer.orders.length > 0 ? (
+                      <div className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <div className="max-h-60 overflow-y-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-zinc-100 dark:border-zinc-800 text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-900/40 uppercase sticky top-0 z-10">
+                                <th className="py-2.5 px-4">Order ID</th>
+                                <th className="py-2.5 px-4">Date</th>
+                                <th className="py-2.5 px-4 text-right">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                              {selectedCustomer.orders.map((order) => (
+                                <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                                  <td className="py-2.5 px-4 font-mono text-zinc-500">{order.id}</td>
+                                  <td className="py-2.5 px-4 text-zinc-500">
+                                    {new Date(order.createdAt).toLocaleDateString(undefined, {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </td>
+                                  <td className="py-2.5 px-4 font-bold text-zinc-900 dark:text-zinc-50 text-right">
+                                    {formatCurrency(order.amount)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-zinc-400 border border-dashed rounded-xl border-zinc-200 dark:border-zinc-800 text-xs">
+                        No order records found for this profile.
+                      </div>
+                    )
+                  )}
+                </div>
+
                 {/* Badges / Status Intel Section */}
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Customer Intel & Status</h3>
@@ -375,49 +642,6 @@ export default function CustomersPage() {
                       </span>
                     ))}
                   </div>
-                </div>
-
-                {/* Order History */}
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Order History</h3>
-                  {selectedCustomer.orders && selectedCustomer.orders.length > 0 ? (
-                    <div className="bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                      <div className="max-h-60 overflow-y-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-zinc-100 dark:border-zinc-800 text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-900/40 uppercase sticky top-0 z-10">
-                              <th className="py-2.5 px-4">Order ID</th>
-                              <th className="py-2.5 px-4">Date</th>
-                              <th className="py-2.5 px-4 text-right">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            {selectedCustomer.orders.map((order) => (
-                              <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
-                                <td className="py-2.5 px-4 font-mono text-zinc-500">{order.id}</td>
-                                <td className="py-2.5 px-4 text-zinc-500">
-                                  {new Date(order.createdAt).toLocaleDateString(undefined, {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                  })}
-                                </td>
-                                <td className="py-2.5 px-4 font-bold text-zinc-900 dark:text-zinc-50 text-right">
-                                  {formatCurrency(order.amount)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center text-zinc-400 border border-dashed rounded-xl border-zinc-200 dark:border-zinc-800 text-xs">
-                      No order records found for this profile.
-                    </div>
-                  )}
                 </div>
               </div>
 

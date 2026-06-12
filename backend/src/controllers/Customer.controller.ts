@@ -118,6 +118,14 @@ export const getCustomers = async (
             createdAt: "desc",
           },
         },
+        communications: {
+          include: {
+            campaign: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
