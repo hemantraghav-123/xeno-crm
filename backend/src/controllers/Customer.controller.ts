@@ -16,8 +16,6 @@ export const createCustomer = async (
   }
 };
 
-import crypto from "crypto";
-
 export const generateCustomers = async (
   req: Request,
   res: Response
@@ -26,51 +24,26 @@ export const generateCustomers = async (
     const { faker } = await import("@faker-js/faker");
     const count = Number(req.body.count || 100);
 
-    const customersData = [];
-    const ordersData = [];
+    const customers = [];
 
     for (let i = 0; i < count; i++) {
-      const customerId = crypto.randomUUID();
-      const email = faker.internet.email().toLowerCase();
-
-      customersData.push({
-        id: customerId,
+      customers.push({
         name: faker.person.fullName(),
-        email: email,
-        phone: faker.helpers.fromRegExp("+91 [7-9][0-9]{9}"),
-        createdAt: faker.date.past({ years: 1 }),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
       });
-
-      // generate random number of orders (1 to 8) for each customer
-      const orderCount = faker.number.int({ min: 1, max: 8 });
-      for (let j = 0; j < orderCount; j++) {
-        ordersData.push({
-          id: crypto.randomUUID(),
-          customerId: customerId,
-          amount: faker.number.float({ min: 100, max: 15000, multipleOf: 0.01 }),
-          createdAt: faker.date.past({ years: 1 }),
-        });
-      }
     }
 
     await prisma.customer.createMany({
-      data: customersData,
-      skipDuplicates: true,
-    });
-
-    await prisma.order.createMany({
-      data: ordersData,
-      skipDuplicates: true,
+      data: customers,
     });
 
     res.json({
       success: true,
-      generatedCustomers: customersData.length,
-      generatedOrders: ordersData.length,
+      generated: count,
     });
   } catch (error) {
-    console.error("Generate customers error:", error);
-    res.status(500).json({ error: error instanceof Error ? error.message : "Failed to generate mock data" });
+    res.status(500).json(error);
   }
 };
 

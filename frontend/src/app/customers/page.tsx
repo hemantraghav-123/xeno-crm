@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Search, ChevronLeft, ChevronRight, X, Calendar, Clipboard, CreditCard, User, ShieldAlert, Database, RefreshCw } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, X, Calendar, Clipboard, CreditCard, User, ShieldAlert } from "lucide-react";
 
 interface Order {
   id: string;
@@ -29,34 +29,6 @@ export default function CustomersPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [seeding, setSeeding] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ message, type });
-    setTimeout(() => {
-      setToast(null);
-    }, 4000);
-  };
-
-  const handleSeedData = async () => {
-    try {
-      setSeeding(true);
-      const response = await api.post("/customers/generate", { count: 30 });
-      showToast(`Generated ${response.data.generatedCustomers} demo customers with ${response.data.generatedOrders} orders!`);
-      
-      if (page === 1) {
-        fetchCustomers();
-      } else {
-        setPage(1);
-      }
-    } catch (error) {
-      console.error("Failed to generate demo data:", error);
-      showToast("Failed to generate demo data", "error");
-    } finally {
-      setSeeding(false);
-    }
-  };
 
   // Debounced search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -170,20 +142,7 @@ export default function CustomersPage() {
 
   return (
     <ProtectedRoute>
-      <main className="max-w-6xl mx-auto p-6 space-y-8 relative">
-        {/* Toast Notification */}
-        {toast && (
-          <div
-            className={`fixed bottom-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg border text-white transition-all transform translate-y-0 ${
-              toast.type === "success"
-                ? "bg-emerald-600 border-emerald-500"
-                : "bg-rose-600 border-rose-500"
-            }`}
-          >
-            {toast.message}
-          </div>
-        )}
-
+      <main className="max-w-6xl mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -193,38 +152,16 @@ export default function CustomersPage() {
             </p>
           </div>
 
-          {/* Action Row */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            {/* Generate Demo Data Button */}
-            <button
-              onClick={handleSeedData}
-              disabled={seeding || loading}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold px-4 py-2 rounded-xl text-sm transition-all shadow-sm disabled:opacity-50 h-[38px] min-w-[170px]"
-            >
-              {seeding ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Generating...</span>
-                </>
-              ) : (
-                <>
-                  <Database className="h-4 w-4" />
-                  <span>Generate Demo Data</span>
-                </>
-              )}
-            </button>
-
-            {/* Search bar */}
-            <div className="relative w-full sm:w-80">
-              <input
-                type="text"
-                className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 dark:focus:ring-zinc-50 transition-all text-zinc-900 dark:text-zinc-50 h-[38px]"
-                placeholder="Search by name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <Search className="h-4 w-4 text-zinc-400 absolute left-3.5 top-2.5" />
-            </div>
+          {/* Search bar */}
+          <div className="relative w-full md:w-80">
+            <input
+              type="text"
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 dark:focus:ring-zinc-50 transition-all text-zinc-900 dark:text-zinc-50"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Search className="h-4 w-4 text-zinc-400 absolute left-3.5 top-3" />
           </div>
         </div>
 
