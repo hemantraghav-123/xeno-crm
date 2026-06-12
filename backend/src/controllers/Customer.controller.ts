@@ -46,3 +46,73 @@ export const generateCustomers = async (
     res.status(500).json(error);
   }
 };
+
+export const getCustomers = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const search = req.query.search ? String(req.query.search).trim() : "";
+
+    const whereClause: any = {};
+    if (search) {
+      whereClause.OR = [
+        {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    const customers = await prisma.customer.findMany({
+      where: whereClause,
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        orders: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const total = await prisma.customer.count({
+      where: whereClause,
+    });
+
+    const formattedCustomers = customers.map((customer) => {
+      const totalSpend = customer.orders.reduce(
+        (sum, order) => sum + order.amount,
+        0
+      );
+      return {
+        ...customer,
+        totalSpend,
+      };
+    });
+
+    res.json({
+      customers: formattedCustomers,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("Get customers error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, Send, LayoutDashboard, Sparkles, LogOut, User } from "lucide-react";
+import { BarChart3, Users, Send, LayoutDashboard, Sparkles, LogOut, User, Layers } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
@@ -11,7 +11,8 @@ export default function Navbar() {
 
   const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Segments", href: "/segments", icon: Users },
+    { name: "Customers", href: "/customers", icon: Users },
+    { name: "Segments", href: "/segments", icon: Layers },
     { name: "Campaigns", href: "/campaigns", icon: Send },
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
   ];
