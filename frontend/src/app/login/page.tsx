@@ -4,12 +4,13 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Sparkles, Mail, Lock, AlertCircle } from "lucide-react";
+import { Sparkles, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const router = useRouter();
@@ -30,32 +31,6 @@ export default function LoginPage() {
       await login(email, password);
     } catch (err: any) {
       setError(err.message || "Invalid credentials. Please try again.");
-    } finally {
-      setSigningIn(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setEmail("demo@xeno.ai");
-    setPassword("xenoDemo123");
-    setError(null);
-    setSigningIn(true);
-
-    try {
-      await login("demo@xeno.ai", "xenoDemo123");
-    } catch (err: any) {
-      try {
-        // Attempt automatic register for demo account for high ease-of-use
-        const { api } = await import("@/services/api");
-        await api.post("/auth/register", {
-          name: "Demo User",
-          email: "demo@xeno.ai",
-          password: "xenoDemo123",
-        });
-        await login("demo@xeno.ai", "xenoDemo123");
-      } catch (regErr: any) {
-        setError("Demo login failed. Please register a new account instead.");
-      }
     } finally {
       setSigningIn(false);
     }
@@ -109,14 +84,21 @@ export default function LoginPage() {
             <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Password</label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50 transition-all text-zinc-900 dark:text-zinc-50"
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-50 transition-all text-zinc-900 dark:text-zinc-50"
               />
               <Lock className="h-4 w-4 text-zinc-400 absolute left-3.5 top-3.5" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
@@ -129,24 +111,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="relative flex items-center justify-center">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-100 dark:border-zinc-800" />
-          </div>
-          <span className="relative bg-white dark:bg-zinc-900 px-3 text-xs text-zinc-400 font-medium uppercase tracking-wider">or</span>
-        </div>
-
-        {/* Demo log in */}
-        <button
-          onClick={handleDemoLogin}
-          disabled={signingIn}
-          className="w-full bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30 font-semibold py-2.5 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
-        >
-          <Sparkles className="h-4 w-4 text-indigo-500" />
-          Sign In with Demo Account
-        </button>
-
-        <div className="text-center pt-2">
+        <div className="text-center pt-4 border-t border-zinc-100 dark:border-zinc-800">
           <p className="text-zinc-500 dark:text-zinc-400 text-xs font-medium">
             Don't have an account?{" "}
             <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:underline">
@@ -159,3 +124,4 @@ export default function LoginPage() {
     </main>
   );
 }
+
