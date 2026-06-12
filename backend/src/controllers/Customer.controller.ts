@@ -24,26 +24,60 @@ export const generateCustomers = async (
     const { faker } = await import("@faker-js/faker");
     const count = Number(req.body.count || 100);
 
-    const customers = [];
-
+    const customersData = [];
     for (let i = 0; i < count; i++) {
-      customers.push({
+      customersData.push({
         name: faker.person.fullName(),
-        email: faker.internet.email(),
-        phone: faker.phone.number(),
+        email: faker.internet.email().toLowerCase(),
+        phone: faker.helpers.fromRegExp("+91 [7-9][0-9]{9}"),
       });
     }
 
+    // Insert customers in bulk
     await prisma.customer.createMany({
-      data: customers,
+      data: customersData,
+      skipDuplicates: true,
     });
+
+    // Query all customers that currently have no orders and generate order records for them
+    const allCustomers = await prisma.customer.findMany({
+      include: {
+        orders: true,
+      },
+    });
+
+    const customersWithoutOrders = allCustomers.filter(
+      (c) => c.orders.length === 0
+    );
+
+    const ordersData = [];
+    for (const customer of customersWithoutOrders) {
+      const orderCount = faker.number.int({ min: 1, max: 8 });
+      for (let j = 0; j < orderCount; j++) {
+        ordersData.push({
+          amount: faker.number.float({ min: 200, max: 15000, multipleOf: 0.01 }),
+          customerId: customer.id,
+          createdAt: faker.date.past({ years: 1 }),
+        });
+      }
+    }
+
+    if (ordersData.length > 0) {
+      await prisma.order.createMany({
+        data: ordersData,
+      });
+    }
 
     res.json({
       success: true,
       generated: count,
+      ordersGenerated: ordersData.length,
     });
   } catch (error) {
-    res.status(500).json(error);
+    console.error("Generate customers error:", error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 
