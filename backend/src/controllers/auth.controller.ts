@@ -241,3 +241,25 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error." });
   }
 };
+
+export const deleteAccount = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    await prisma.user.delete({
+      where: { id: req.user.id },
+    });
+
+    res.json({
+      success: true,
+      message: "Account deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Delete account error:", error);
+    res.status(500).json({ error: "Internal server error during account deletion." });
+  }
+};
+
