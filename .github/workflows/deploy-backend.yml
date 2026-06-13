@@ -1,0 +1,64 @@
+name: Deploy Backend & Channel Service to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'channel-service/**'
+      - 'package.json'
+      - 'ecosystem.config.js'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    name: Build and Deploy to Elastic Beanstalk
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            channel-service/package-lock.json
+
+      - name: Build Backend (TypeScript)
+        run: |
+          cd backend
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Build Channel Service (TypeScript)
+        run: |
+          cd channel-service
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Create Deployable Zip Bundle
+        run: |
+          zip -r deploy.zip \
+            ecosystem.config.js \
+            package.json \
+            backend/dist \
+            backend/prisma \
+            channel-service/dist
+
+      - name: Deploy to Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: xeno-crm-backend
+          environment_name: XenoCrmBackend-env
+          version_label: deploy-${{ github.sha }}-${{ github.run_number }}
+          region: ${{ secrets.AWS_REGION }}
+          deployment_package: deploy.zip
