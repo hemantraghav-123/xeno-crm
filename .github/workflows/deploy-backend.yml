@@ -46,6 +46,7 @@ jobs:
       - name: Create Deployable Zip Bundle
         run: |
           zip -r deploy.zip \
+            .ebextensions \
             ecosystem.config.js \
             package.json \
             backend/dist \
