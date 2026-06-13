@@ -50,7 +50,10 @@ jobs:
             package.json \
             backend/dist \
             backend/prisma \
-            channel-service/dist
+            backend/package.json \
+            backend/prisma-migrate.js \
+            channel-service/dist \
+            channel-service/package.json
 
       - name: Deploy to Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22

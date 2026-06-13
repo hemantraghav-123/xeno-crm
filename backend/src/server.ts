@@ -17,14 +17,17 @@ import { requireAuth } from "./middleware/auth.middleware";
 
 
 
-const app = express();
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://xeno-crm-pied.vercel.app",
+];
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://xeno-crm-pied.vercel.app",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );
