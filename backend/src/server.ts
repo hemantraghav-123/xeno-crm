@@ -17,6 +17,8 @@ import { requireAuth } from "./middleware/auth.middleware";
 
 
 
+const app = express();
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://xeno-crm-pied.vercel.app",
