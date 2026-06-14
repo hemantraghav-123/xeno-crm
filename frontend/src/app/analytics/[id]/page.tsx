@@ -7,6 +7,7 @@ import FunnelChart from "@/components/FunnelChart";
 import InsightCard from "@/components/InsightCard";
 import { ArrowLeft, Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, AlertTriangle } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 
 interface AnalyticsResponse {
   analytics: {
@@ -39,6 +40,7 @@ export default function CampaignAnalyticsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const params = use(paramsPromise);
   const campaignId = params.id;
 
@@ -48,8 +50,9 @@ export default function CampaignAnalyticsPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchCampaignDetails();
-  }, [campaignId]);
+  }, [campaignId, isAuthenticated, authLoading]);
 
   const fetchCampaignDetails = async (showLoading = true) => {
     try {
@@ -80,7 +83,7 @@ export default function CampaignAnalyticsPage({
   };
 
   // Loading skeletons
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <ProtectedRoute>
         <div className="max-w-6xl mx-auto p-6 space-y-10">

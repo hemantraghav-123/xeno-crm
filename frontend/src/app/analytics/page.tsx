@@ -6,6 +6,7 @@ import { api } from "@/services/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Send, CheckCircle, MailOpen, MousePointerClick, RefreshCw, BarChart2, ArrowRight, Layers, Users } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 
 interface AnalyticsData {
   sent: number;
@@ -34,6 +35,7 @@ interface CohortData {
 }
 
 export default function AnalyticsPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<AnalyticsData>({
     sent: 0,
     delivered: 0,
@@ -50,13 +52,15 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    if (authLoading || !isAuthenticated) return;
     fetchAnalytics();
     fetchCampaigns();
     fetchCohorts();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   useEffect(() => {
     if (!pollingActive) return;
+    if (authLoading || !isAuthenticated) return;
 
     const interval = setInterval(() => {
       fetchAnalytics(false); // fetch silently without loading indicator
@@ -65,7 +69,7 @@ export default function AnalyticsPage() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [pollingActive]);
+  }, [pollingActive, isAuthenticated, authLoading]);
 
   const fetchAnalytics = async (showLoading = true) => {
     try {

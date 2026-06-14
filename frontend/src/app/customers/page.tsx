@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 import { 
   Search, ChevronLeft, ChevronRight, X, Calendar, Clipboard, CreditCard, 
   User, ShieldAlert, MailOpen, Send, Mail, MousePointer, ShoppingBag, History 
@@ -44,6 +45,7 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -72,8 +74,9 @@ export default function CustomersPage() {
   }, [search]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchCustomers();
-  }, [page, searchTerm]);
+  }, [page, searchTerm, isAuthenticated, authLoading]);
 
   const fetchCustomers = async () => {
     try {

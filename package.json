@@ -1,11 +1,15 @@
 {
-  "name": "xeno-crm-root",
+  "name": "xeno-crm-monorepo",
   "version": "1.0.0",
-  "private": true,
+  "description": "Monorepo root for Xeno CRM",
   "scripts": {
-    "postinstall": "npm run install:backend && npm run install:channel",
-    "install:backend": "cd backend && npm install --omit=dev && npx prisma generate",
-    "install:channel": "cd channel-service && npm install --omit=dev",
-    "start": "node start-all.js"
+    "install:all": "npm install --prefix frontend && npm install --prefix backend && npm install --prefix channel-service",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:channel": "npm run dev --prefix channel-service",
+    "dev": "npx concurrently -k -p \"[{name}]\" -n \"Frontend,Backend,Channel\" -c \"cyan.bold,green.bold,yellow.bold\" \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run dev:channel\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   }
 }

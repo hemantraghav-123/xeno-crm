@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/services/api";
 import { Users, ClipboardList, Send, BarChart2, Mail, MousePointer } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 
 interface DashboardStats {
   customers: number;
@@ -16,6 +17,7 @@ interface DashboardStats {
 }
 
 export default function Home() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     customers: 0,
     orders: 0,
@@ -27,6 +29,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
     async function fetchStats() {
       try {
         setLoading(true);
@@ -39,7 +43,7 @@ export default function Home() {
       }
     }
     fetchStats();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const cardsData = [
     {

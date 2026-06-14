@@ -19,18 +19,12 @@ import { requireAuth } from "./middleware/auth.middleware";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://xeno-crm-pied.vercel.app",
-];
-if (process.env.FRONTEND_URL) {
-  const dynamicOrigins = process.env.FRONTEND_URL.split(",");
-  allowedOrigins.push(...dynamicOrigins.map(origin => origin.trim()));
-}
-
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: [
+      "http://localhost:3000",
+      "https://xeno-crm-pied.vercel.app",
+    ],
     credentials: true,
   })
 );

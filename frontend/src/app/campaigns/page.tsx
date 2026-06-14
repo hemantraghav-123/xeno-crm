@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/services/api";
 import { Copy, Check, Send, Sparkles, PlusCircle } from "lucide-react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
 
 interface Campaign {
   id: string;
@@ -15,6 +16,7 @@ interface Campaign {
 }
 
 export default function CampaignsPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [goal, setGoal] = useState("");
   const [generating, setGenerating] = useState(false);
   const [generatedCampaign, setGeneratedCampaign] = useState<{
@@ -33,8 +35,9 @@ export default function CampaignsPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
     fetchCampaigns();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
