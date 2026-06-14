@@ -73,6 +73,7 @@ jobs:
             # Create .env file with production secrets
             cat << 'EOF' > .env
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
             Gemini_API_KEY="${{ secrets.GEMINI_API_KEY }}"
             JWT_SECRET="${{ secrets.JWT_SECRET }}"
             PORT=5000

@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY!
+  process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY || ""
 );
 
 export const geminiModel = genAI.getGenerativeModel({

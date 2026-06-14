@@ -38,7 +38,8 @@ function buildFallbackRules(userPrompt: string) {
 }
 
 export async function generateSegmentRules(userPrompt: string) {
-  if (!process.env.GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.Gemini_API_KEY;
+  if (!apiKey) {
     throw new Error("GEMINI_API_KEY is missing in environment variables.");
   }
 
