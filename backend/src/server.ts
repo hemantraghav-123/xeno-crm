@@ -24,7 +24,8 @@ const allowedOrigins = [
   "https://xeno-crm-pied.vercel.app",
 ];
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  const dynamicOrigins = process.env.FRONTEND_URL.split(",");
+  allowedOrigins.push(...dynamicOrigins.map(origin => origin.trim()));
 }
 
 app.use(

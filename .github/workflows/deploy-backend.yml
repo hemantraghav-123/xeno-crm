@@ -1,19 +1,12 @@
-name: Deploy Backend & Channel Service to AWS Elastic Beanstalk
+name: Deploy Backend to AWS Elastic Beanstalk
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'backend/**'
-      - 'channel-service/**'
-      - 'package.json'
-      - 'ecosystem.config.js'
-      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   deploy:
-    name: Build and Deploy to Elastic Beanstalk
     runs-on: ubuntu-latest
 
     steps:
@@ -29,40 +22,43 @@ jobs:
             backend/package-lock.json
             channel-service/package-lock.json
 
-      - name: Build Backend (TypeScript)
+      # 1. Build main backend
+      - name: Install & Build Backend
         run: |
           cd backend
           npm ci
           npm run build
-          cd ..
 
-      - name: Build Channel Service (TypeScript)
+      # 2. Build channel-service
+      - name: Install & Build Channel Service
         run: |
           cd channel-service
           npm ci
           npm run build
-          cd ..
 
-      - name: Create Deployable Zip Bundle
+      # 3. Zip files for Elastic Beanstalk deployment
+      # We only include the compiled JavaScript (dist/), package configurations, migration utilities, and the root orchestrators.
+      - name: Generate Deployment Zip
         run: |
           zip -r deploy.zip \
-            .ebextensions \
-            ecosystem.config.js \
-            package.json \
             backend/dist \
-            backend/prisma \
             backend/package.json \
+            backend/prisma \
             backend/prisma-migrate.js \
             channel-service/dist \
-            channel-service/package.json
+            channel-service/package.json \
+            package.json \
+            start-all.js
 
-      - name: Deploy to Elastic Beanstalk
+      # 4. Deploy deployment package to AWS Elastic Beanstalk
+      - name: Deploy to AWS Elastic Beanstalk
         uses: einaregilsson/beanstalk-deploy@v22
         with:
           aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: xeno-crm-backend
-          environment_name: Xeno-crm-backend-env-1
-          version_label: deploy-${{ github.sha }}-${{ github.run_number }}
+          environment_name: xeno-crm-backend-env
+          version_label: "deploy-${{ github.sha }}-${{ github.run_number }}"
           region: ${{ secrets.AWS_REGION }}
           deployment_package: deploy.zip
+          use_existing_version_if_available: true
