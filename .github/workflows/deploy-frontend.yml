@@ -51,7 +51,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
-          scp frontend/frontend.tar.gz $USER@$HOST:/var/www/xeno-crm/frontend/
+          scp -i ~/.ssh/id_rsa frontend/frontend.tar.gz $USER@$HOST:/var/www/xeno-crm/frontend/
 
       - name: SSH and Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
